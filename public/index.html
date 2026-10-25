@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Rumah Sakit - UTS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center shadow-md">
+        <div class="flex items-center space-x-3">
+            <span class="bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg text-lg">🏥 RS Sehat Sentosa</span>
+            <span class="text-slate-400 text-sm hidden md:inline">Dashboard Manajemen Medis & Status Pulang (UTS)</span>
+        </div>
+        <div class="text-sm bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+            Sistem: <span class="text-emerald-400 font-semibold">● Aktif</span>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Kolom Kiri: Status Dokter & Kamar -->
+        <div class="space-y-6">
+            <!-- Status Dokter -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">👨‍⚕️ Status Dokter Jaga</h2>
+                <div id="doctor-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Status Kamar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🛏️ Status Kamar Inap</h2>
+                <div id="room-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: CRUD Pasien & Rule Kondisi Pulang -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Form Tambah Pasien -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-4">➕ Pendaftaran Pasien Baru (CRUD - Create)</h2>
+                <form id="patient-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="name" placeholder="Nama Pasien" required class="bg-slate-950 border border-slate-700 px-4 py-2.5 rounded-xl focus:outline-none focus:border-rose-500">
+                    <input type="text" id="disease" placeholder="Diagnosa Penyakit" required class="bg-slate-950 border border-slate-700 px-4 py-2.5 rounded-xl focus:outline-none focus:border-rose-500">
+                    <input type="text" id="room" placeholder="Nomor Kamar (Contoh: Mawar 101)" required class="bg-slate-950 border border-slate-700 px-4 py-2.5 rounded-xl focus:outline-none focus:border-rose-500">
+                    <input type="number" id="progress" placeholder="Progress Kesembuhan (%)" min="0" max="100" required class="bg-slate-950 border border-slate-700 px-4 py-2.5 rounded-xl focus:outline-none focus:border-rose-500">
+                    <button type="submit" class="md:col-span-2 bg-rose-600 hover:bg-rose-500 font-semibold py-3 rounded-xl transition shadow-lg shadow-rose-600/20">Simpan Data Pasien</button>
+                </form>
+            </div>
+
+            <!-- Tabel Data Pasien & Aturan Pulang -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <h2 class="text-xl font-bold mb-4">📋 Pemantauan Persentase Pemulihan & Syarat Pulang</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-sm">
+                                <th class="py-3 px-4">Nama Pasien</th>
+                                <th class="py-3 px-4">Penyakit / Kamar</th>
+                                <th class="py-3 px-4">Kondisi (%)</th>
+                                <th class="py-3 px-4">Status Kelayakan Pulang</th>
+                                <th class="py-3 px-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patient-table-body" class="divide-y divide-slate-800/60 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Script Logika Frontend -->
+    <script>
+        async function fetchHospitalData() {
+            try {
+                const res = await fetch('/api/hospital');
+                const data = await res.json();
+                
+                // Render Doctors
+                document.getElementById('doctor-list').innerHTML = data.doctors.map(d => `
+                    <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div>
+                            <p class="font-semibold">${d.name}</p>
+                            <p class="text-xs text-slate-400">${d.specialty}</p>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-full font-medium ${d.status === 'Ready' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">${d.status}</span>
+                    </div>
+                `).join('');
+
+                // Render Rooms
+                document.getElementById('room-list').innerHTML = data.rooms.map(r => `
+                    <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div>
+                            <p class="font-semibold">${r.roomNumber}</p>
+                            <p class="text-xs text-slate-400">${r.type}</p>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-full font-medium ${r.status === 'Ready' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">${r.status}</span>
+                    </div>
+                `).join('');
+
+                // Render Patients Table
+                document.getElementById('patient-table-body').innerHTML = data.patients.map(p => `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-4 px-4 font-medium">${p.name}</td>
+                        <td class="py-4 px-4 text-slate-400">${p.disease}<br><span class="text-xs text-slate-500">Kamar: ${p.room}</span></td>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-24 bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                                    <div class="bg-rose-500 h-full" style="width: ${p.progress}%"></div>
+                                </div>
+                                <span class="text-xs font-bold">${p.progress}%</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="text-xs px-3 py-1 rounded-full font-semibold ${p.progress >= 100 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">
+                                ${p.dischargeStatus}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4 text-center space-x-2">
+                            <button onclick="updateProgress(${p.id}, ${p.progress})" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1.5 rounded-lg transition font-medium">Update %</button>
+                            <button onclick="deletePatient(${p.id})" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">Pulangkan</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Gagal mengambil data:', err);
+            }
+        }
+
+        document.getElementById('patient-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/patients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('name').value,
+                    disease: document.getElementById('disease').value,
+                    room: document.getElementById('room').value,
+                    progress: document.getElementById('progress').value
+                })
+            });
+            e.target.reset();
+            fetchHospitalData();
+        });
+
+        async function updateProgress(id, currentProgress) {
+            const newProg = prompt("Masukkan persentase kesembuhan baru (0 - 100):", currentProgress);
+            if (newProg !== null && !isNaN(newProg)) {
+                await fetch(`/api/patients/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ progress: newProg })
+                });
+                fetchHospitalData();
+            }
+        }
+
+        async function deletePatient(id) {
+            if (confirm("Apakah pasien sudah dipastikan sembuh dan diizinkan pulang?")) {
+                await fetch(`/api/patients/${id}`, { method: 'DELETE' });
+                fetchHospitalData();
+            }
+        }
+
+        fetchHospitalData();
+    </script>
+</body>
+</html>

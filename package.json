@@ -1,0 +1,12 @@
+{
+  "name": "uts-rumahsakit-vercel",
+  "version": "1.0.0",
+  "description": "Aplikasi Manajemen Rumah Sakit untuk UTS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
